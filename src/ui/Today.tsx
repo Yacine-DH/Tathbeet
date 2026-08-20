@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from 'react'
 import { computeStreak, dayKey, formatDay } from '../lib/dates'
 import { dueBacklog } from '../lib/engine'
 import { hifzProgress, targetLabel } from '../lib/hifz'
-import { surah } from '../lib/refs'
+import { countAyahs, surah } from '../lib/refs'
 import { parseSegmentId, type Segment } from '../lib/segments'
 import { nextDueLabel, strength } from '../lib/srs'
 import type { PlanItem, PrayerId } from '../lib/types'
@@ -48,6 +48,11 @@ export function Today({ onGoTo }: { onGoTo: (tab: 'memorised' | 'settings') => v
   const total = plan?.items.length ?? 0
   const percent = total ? Math.round((done / total) * 100) : 0
   const remaining = (plan?.items ?? []).filter((i) => !i.grade)
+
+  const recent7 = useMemo(() => {
+    const cutoff = Date.now() - 7 * 86400000
+    return state.log.filter((e) => e.at >= cutoff).length
+  }, [state.log])
 
   const backlog = useMemo(
     () => dueBacklog(segments, state.records, today, new Set(plan?.items.map((i) => i.segmentId))),
@@ -139,7 +144,6 @@ export function Today({ onGoTo }: { onGoTo: (tab: 'memorised' | 'settings') => v
         <h1 className="greeting" style={{ margin: 0, maxWidth: 'none' }}>
           {t('today.greeting')}
         </h1>
-        {streak > 0 && <span className="chip accent">🔥 {t('today.streak', { n: streak })}</span>}
       </div>
 
       {/* Daily goal — overall progress plus the whole-day actions. */}
@@ -167,6 +171,28 @@ export function Today({ onGoTo }: { onGoTo: (tab: 'memorised' | 'settings') => v
           <button className="btn sm ghost" onClick={() => dispatch({ type: 'reshuffle' })}>
             <Icon.shuffle /> {t('today.reshuffle')}
           </button>
+        </div>
+      </div>
+
+      {/* The numbers of the day — streak front and centre. */}
+      <div className="stats">
+        <div className="stat invert">
+          <b>🔥 {streak}</b>
+          <span>
+            {t('prog.streak')} ({t('prog.days')})
+          </span>
+        </div>
+        <div className="stat">
+          <b>{countAyahs(state.memorised)}</b>
+          <span>{t('prog.memorised')}</span>
+        </div>
+        <div className="stat">
+          <b>{recent7}</b>
+          <span>{t('prog.reviewed7')}</span>
+        </div>
+        <div className="stat">
+          <b>{backlog.length}</b>
+          <span>{t('today.backlog')}</span>
         </div>
       </div>
 
