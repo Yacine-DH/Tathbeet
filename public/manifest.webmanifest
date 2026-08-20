@@ -1,0 +1,22 @@
+{
+  "name": "Tathbit — تثبيت",
+  "short_name": "Tathbit",
+  "description": "Each day it picks the passages to recite in your prayers, weighted toward whatever is starting to fade. New memorisation advances at a pace you set, in your riwayah — offline, on your device.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#070c0f",
+  "theme_color": "#070c0f",
+  "lang": "ar",
+  "dir": "rtl",
+  "categories": ["education", "lifestyle"],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
