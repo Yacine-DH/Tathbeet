@@ -25,3 +25,4 @@ dist-ssr
 
 # stray API dumps from data probing
 ea*.js
+mp3q*.json
