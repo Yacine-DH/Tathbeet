@@ -153,6 +153,8 @@ export interface SessionEntry {
 
 export interface AppState {
   version: number
+  /** Last local change, in epoch ms — decides who wins when two devices differ. */
+  updatedAt: number
   /** Set once the setup wizard has been completed. */
   onboarded: boolean
   /** Everything the user currently has memorised, as normalised ranges. */

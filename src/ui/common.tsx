@@ -182,6 +182,12 @@ export const Icon = {
       <path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z" />
     </svg>
   ),
+  cloud: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 18a4 4 0 0 1-.4-8A6 6 0 0 1 18 9.5a3.75 3.75 0 0 1-.4 8.5z" />
+      <path d="M12 12v6M9.5 15.5 12 18l2.5-2.5" />
+    </svg>
+  ),
   wave: () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round">
       <path d="M3 12h2M8 6v12M12 3v18M16 7v10M20 11h1" />

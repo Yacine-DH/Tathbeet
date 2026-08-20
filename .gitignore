@@ -29,3 +29,7 @@ mp3q*.json
 
 # local Claude Code / editor config
 .claude/
+
+# local secrets
+.env
+.env.local

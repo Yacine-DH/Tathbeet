@@ -90,6 +90,45 @@ install and no offline mode, and the computer has to stay on.
 Two notes: on iOS, reminder notifications only work from an installed PWA on iOS 16.4+; and the
 Settings screen can export a backup file you can import on another device.
 
+## Syncing between devices (optional)
+
+Out of the box the app is local-only. Turn on sync and each person signs in with
+their own Google account, gets their own private row, and the phone and laptop stay
+in step. It is genuinely optional: with no keys configured, nothing about the app
+changes and no network call is made.
+
+**Revisions are merged, never overwritten.** Two devices used on the same day is the
+normal case, not the edge case, so each collection is combined on its own terms:
+
+| Data | Rule |
+| --- | --- |
+| Memorised ranges | union of both |
+| Review schedule | whichever device graded that passage last |
+| Session log, active days | union, de-duplicated |
+| Day plan | the copy with more passages actually recited |
+| Settings, hifz target | most recently changed device wins |
+| Onboarding | done on either = done everywhere |
+
+### Setting it up
+
+1. Create a project at [supabase.com](https://supabase.com) (free tier is plenty).
+2. In **SQL Editor**, run [`supabase/schema.sql`](supabase/schema.sql). It creates the
+   table and the Row Level Security policies that scope every row to its owner.
+3. In **Authentication → Providers → Google**, enable Google. It asks for a client ID
+   and secret from a [Google Cloud OAuth client](https://console.cloud.google.com/apis/credentials);
+   add the callback URL Supabase shows you as an authorised redirect URI.
+4. Copy `.env.example` to `.env` and fill in the project URL and anon key from
+   **Project Settings → API**.
+5. For the deployed build, add the same two values as repository secrets
+   (**Settings → Secrets and variables → Actions**): `VITE_SUPABASE_URL` and
+   `VITE_SUPABASE_ANON_KEY`. The workflow already passes them to the build.
+
+Then **Settings → Sync → Sign in with Google** on each device.
+
+Both values are public — they ship inside the JavaScript bundle, which is how Supabase
+is designed to work. Security comes from Row Level Security, not from hiding the anon
+key. Never put the *service role* key in this project.
+
 ## How it is put together
 
 | Path | Role |
@@ -102,6 +141,8 @@ Settings screen can export a backup file you can import on another device.
 | `src/lib/engine.ts` | Daily plan builder: weighted sampling, anti-repetition, per-prayer constraints with graceful relaxation when the pool is small. |
 | `src/lib/hifz.ts` | Memorisation goal: targets, pace presets, daily portion, completion estimate. |
 | `src/lib/storage.ts` | IndexedDB persistence (localStorage fallback), defaults, migration, backup import/export. |
+| `src/lib/merge.ts` | Combines two devices' state without losing a revision — the heart of sync. |
+| `src/lib/cloud.ts` | Supabase auth and state transfer; a no-op when unconfigured. |
 | `src/state/store.tsx` | Reducer + a `derive` pass that keeps passages, records and today's plan consistent with the inventory. |
 | `src/lib/i18n.ts` | The four interface languages, their locales and text direction. |
 | `src/ui/` | Setup wizard, Today, recitation session, inventory editor, progress, settings. |
