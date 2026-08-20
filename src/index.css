@@ -1593,3 +1593,147 @@ input[type='range'] {
     font-size: 64px;
   }
 }
+
+/* ---------- centred day header ---------- */
+
+.today-head {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 10px 0 2px;
+}
+
+.date-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--rail);
+  color: var(--rail-text);
+  padding: 8px 18px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  box-shadow: var(--e2);
+}
+
+.prayer-hero-glyph {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: var(--grad-soft);
+  border: 1px solid color-mix(in srgb, var(--a1) 26%, transparent);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+}
+
+.prayer-hero-glyph svg {
+  width: 26px;
+  height: 26px;
+}
+
+/* ---------- prayer tiles (dashboard) ---------- */
+
+.prayer-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.prayer-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 15px;
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  border: 1px solid var(--stroke);
+  box-shadow: var(--e1);
+  text-align: start;
+  transition: transform var(--fast) var(--spring), border-color var(--fast) ease;
+}
+
+.prayer-tile:hover {
+  transform: translateY(-2px);
+  border-color: var(--stroke-2);
+}
+
+.prayer-tile:active {
+  transform: scale(0.98);
+}
+
+.prayer-tile .glyph {
+  width: 40px;
+  height: 40px;
+  border-radius: 13px;
+  background: var(--grad-soft);
+  color: var(--accent);
+  display: grid;
+  place-items: center;
+}
+
+.prayer-tile .glyph svg {
+  width: 19px;
+  height: 19px;
+}
+
+.prayer-tile .name {
+  font-weight: 550;
+  font-size: 14.5px;
+}
+
+.prayer-tile.done {
+  opacity: 0.55;
+}
+
+@media (min-width: 900px) {
+  .prayer-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+  }
+
+  .prayer-tile {
+    padding: 20px;
+    border-radius: 20px;
+    gap: 12px;
+  }
+
+  .prayer-tile .glyph {
+    width: 48px;
+    height: 48px;
+  }
+
+  .prayer-tile .glyph svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .prayer-tile .name {
+    font-size: 16px;
+  }
+
+  .date-chip {
+    font-size: 15px;
+    padding: 10px 22px;
+  }
+
+  .prayer-hero-glyph {
+    width: 72px;
+    height: 72px;
+  }
+
+  /* Rail extras */
+  .rail-sync {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+
+  .rail-sync img {
+    border-radius: 50%;
+  }
+}

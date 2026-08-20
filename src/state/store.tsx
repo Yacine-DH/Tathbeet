@@ -21,7 +21,7 @@ import {
 } from '../lib/cloud'
 import { dayKey } from '../lib/dates'
 import { mergeStates } from '../lib/merge'
-import { buildPlan } from '../lib/engine'
+import { buildPlan, reshufflePrayer } from '../lib/engine'
 import { carryAfter, nextPortion } from '../lib/hifz'
 import { normalizeRanges, type Range } from '../lib/refs'
 import { bestOverlap, buildSegments, type Segment } from '../lib/segments'
@@ -33,7 +33,7 @@ import {
   saveState,
   clearState,
 } from '../lib/storage'
-import type { AppState, Grade, HifzGoal, ReviewRecord, Settings } from '../lib/types'
+import type { AppState, Grade, HifzGoal, PrayerId, ReviewRecord, Settings } from '../lib/types'
 
 type Action =
   | { type: 'hydrate'; state: AppState }
@@ -43,6 +43,7 @@ type Action =
   | { type: 'setHifz'; patch: Partial<HifzGoal> }
   | { type: 'grade'; segmentId: string; grade: Grade }
   | { type: 'reshuffle' }
+  | { type: 'reshufflePrayer'; prayer: PrayerId }
   | { type: 'completePortion' }
   | { type: 'onboarded' }
   | { type: 'reset' }
@@ -111,6 +112,7 @@ const LOCAL_EDITS = new Set<Action['type']>([
   'setHifz',
   'grade',
   'reshuffle',
+  'reshufflePrayer',
   'completePortion',
   'onboarded',
   'reset',
@@ -147,6 +149,22 @@ function reduce(state: AppState, action: Action): AppState {
 
     case 'reshuffle':
       return derive({ ...state, planSalt: state.planSalt + 1 }, today)
+
+    case 'reshufflePrayer': {
+      const plan = state.plans[today]
+      if (!plan) return state
+      const segments = buildSegments(state.memorised, state.settings.segmentation)
+      const next = reshufflePrayer({
+        day: today,
+        prayerId: action.prayer,
+        plan,
+        segments,
+        records: state.records,
+        settings: state.settings,
+        plans: state.plans,
+      })
+      return { ...state, plans: { ...state.plans, [today]: next } }
+    }
 
     case 'onboarded':
       return derive({ ...state, onboarded: true }, today)

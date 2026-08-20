@@ -4,7 +4,8 @@ import { directionOf, translator } from './lib/i18n'
 import { loadArabic, loadTranslation } from './lib/quranText'
 import { countAyahs } from './lib/refs'
 import { StoreProvider, useStore } from './state/store'
-import { Icon, useT } from './ui/common'
+import { Icon, Modal, useT } from './ui/common'
+import { RecitationPicker } from './ui/ReciterPicker'
 import { Inventory } from './ui/Inventory'
 import { Progress } from './ui/Progress'
 import { SettingsView } from './ui/SettingsView'
@@ -29,8 +30,9 @@ export default function App() {
 }
 
 function Shell() {
-  const { state } = useStore()
+  const { state, sync, dispatch } = useStore()
   const [tab, setTab] = useState<Tab>('today')
+  const [recitationOpen, setRecitationOpen] = useState(false)
   const t = useT()
 
   useEffect(() => {
@@ -71,7 +73,49 @@ function Shell() {
               {t(item.label)}
             </button>
           ))}
+          <button onClick={() => setRecitationOpen(true)}>
+            <Icon.wave />
+            {t('set.audio')}
+          </button>
         </nav>
+        <div className="rail-foot rail-sync" style={{ marginTop: 'auto' }}>
+          {sync.available &&
+            (sync.user ? (
+              <>
+                <div className="row" style={{ gap: 9 }}>
+                  {sync.user.avatar && <img src={sync.user.avatar} alt="" width={30} height={30} />}
+                  <div className="grow" style={{ minWidth: 0 }}>
+                    <div
+                      className="tiny"
+                      style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    >
+                      {sync.user.name ?? sync.user.email}
+                    </div>
+                    <div
+                      className="tiny"
+                      style={{
+                        color:
+                          sync.status === 'error' ? 'var(--danger)' : 'var(--rail-muted)',
+                      }}
+                    >
+                      {sync.status === 'syncing'
+                        ? t('sync.syncing')
+                        : sync.status === 'error'
+                          ? t('sync.error')
+                          : t('sync.synced')}
+                    </div>
+                  </div>
+                </div>
+                <button className="btn sm block" onClick={() => void sync.syncNow()}>
+                  {t('sync.now')}
+                </button>
+              </>
+            ) : (
+              <button className="btn sm block" onClick={() => void sync.signIn()}>
+                {t('sync.signIn')}
+              </button>
+            ))}
+        </div>
         <div className="rail-foot">
           <div className="tiny" style={{ color: 'var(--rail-muted)' }}>
             {t('prog.streak')}
@@ -104,6 +148,27 @@ function Shell() {
           </button>
         ))}
       </nav>
+
+      {recitationOpen && (
+        <Modal title={t('set.audio')} onClose={() => setRecitationOpen(false)}>
+          <RecitationPicker
+            value={{ riwayah: state.settings.riwayah, reciterId: state.settings.audio.reciterId }}
+            onChange={({ riwayah, reciterId }) =>
+              dispatch({
+                type: 'setSettings',
+                settings: {
+                  ...state.settings,
+                  riwayah,
+                  audio: { ...state.settings.audio, reciterId },
+                },
+              })
+            }
+          />
+          <button className="btn primary block" onClick={() => setRecitationOpen(false)}>
+            {t('common.close')}
+          </button>
+        </Modal>
+      )}
     </div>
   )
 }

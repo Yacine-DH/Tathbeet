@@ -7,7 +7,7 @@ import {
   RECITERS,
   recitersFor,
 } from './audio'
-import { buildPlan, recentlySuggested } from './engine'
+import { buildPlan, recentlySuggested, reshufflePrayer } from './engine'
 import { dailyBudget, hifzProgress, nextPortion, remainingRanges, targetRanges } from './hifz'
 import {
   absIndex,
@@ -309,6 +309,44 @@ describe('recitation catalogue', () => {
       url: 'https://server13.mp3quran.net/husr/Rewayat-Qalon-A-n-Nafi/067.mp3',
       ayah: 1,
     })
+  })
+})
+
+describe('per-prayer reshuffle', () => {
+  const day = '2026-08-20'
+
+  it('redraws one prayer and leaves every other prayer untouched', () => {
+    const settings = defaultSettings()
+    const { segs, records } = recordsFor(JUZ_AMMA, settings, day)
+    const plan = buildPlan({ day, salt: 1, segments: segs, records, settings, plans: {} })
+
+    const next = reshufflePrayer({
+      day, prayerId: 'dhuhr', plan, segments: segs, records, settings, plans: {}, now: 12345,
+    })
+
+    const others = (p: typeof plan) => p.items.filter((i) => i.prayer !== 'dhuhr').map((i) => i.segmentId)
+    expect(others(next)).toEqual(others(plan))
+    expect(next.items.filter((i) => i.prayer === 'dhuhr')).toHaveLength(
+      plan.items.filter((i) => i.prayer === 'dhuhr').length,
+    )
+    // Still no passage twice in the day.
+    const ids = next.items.map((i) => i.segmentId)
+    expect(new Set(ids).size).toBe(ids.length)
+  })
+
+  it('keeps graded items of the reshuffled prayer pinned', () => {
+    const settings = defaultSettings()
+    const { segs, records } = recordsFor(JUZ_AMMA, settings, day)
+    const plan = buildPlan({ day, salt: 2, segments: segs, records, settings, plans: {} })
+    const fajr = plan.items.filter((i) => i.prayer === 'fajr')
+    fajr[0].grade = 'good'
+
+    const next = reshufflePrayer({
+      day, prayerId: 'fajr', plan, segments: segs, records, settings, plans: {}, now: 999,
+    })
+    const nextFajr = next.items.filter((i) => i.prayer === 'fajr')
+    expect(nextFajr.some((i) => i.segmentId === fajr[0].segmentId && i.grade === 'good')).toBe(true)
+    expect(nextFajr).toHaveLength(fajr.length)
   })
 })
 
