@@ -2,7 +2,7 @@ import { daysBetween } from './dates'
 import { makeRng, weightedPick, type Rng } from './rng'
 import type { Segment } from './segments'
 import { isDue, overdueFactor, strength } from './srs'
-import type { DailyPlan, PlanItem, PrayerConfig, ReviewRecord, Settings } from './types'
+import type { DailyPlan, PlanItem, PrayerConfig, PrayerId, ReviewRecord, Settings } from './types'
 
 export interface Candidate {
   segment: Segment
@@ -155,6 +155,57 @@ export function buildPlan(input: {
   }
 
   return { day, salt, items, generatedAt: now }
+}
+
+/**
+ * Redraw one prayer's suggestions while every other prayer — and anything
+ * already graded in this one — stays exactly where it is. The pinned items
+ * count as "used" so the redraw cannot collide with them.
+ */
+export function reshufflePrayer(input: {
+  day: string
+  prayerId: PrayerId
+  plan: DailyPlan
+  segments: Segment[]
+  records: Record<string, ReviewRecord>
+  settings: Settings
+  plans: Record<string, DailyPlan>
+  now?: number
+}): DailyPlan {
+  const { day, prayerId, plan, segments, records, settings, plans } = input
+  const prayer = settings.prayers.find((p) => p.id === prayerId)
+  if (!prayer || !prayer.enabled) return plan
+
+  const now = input.now ?? Date.now()
+  const candidates = buildCandidates(segments, records, settings, day, now)
+  const segOf = new Map(segments.map((s) => [s.id, s]))
+
+  const kept = plan.items.filter((item) => item.prayer !== prayerId || item.grade)
+  const ctx: PickContext = {
+    candidates,
+    usedToday: new Set(kept.map((i) => i.segmentId)),
+    surahsToday: new Set(
+      kept.map((i) => segOf.get(i.segmentId)?.surah).filter((x): x is number => x !== undefined),
+    ),
+    recent: recentlySuggested(plans, day, settings.engine.minRepeatGapDays),
+    settings,
+    day,
+    // Reshuffles are explicit and the result is persisted, so the seed only
+    // needs to differ from last time — the clock is enough.
+    rng: makeRng(`${day}|${prayerId}|${now}`),
+  }
+
+  const graded = kept.filter((i) => i.prayer === prayerId).length
+  const items = [...kept]
+  for (let slot = graded; slot < prayer.passages; slot++) {
+    const chosen = pick(ctx, prayer)
+    if (!chosen) break
+    ctx.usedToday.add(chosen.segment.id)
+    ctx.surahsToday.add(chosen.segment.surah)
+    items.push({ segmentId: chosen.segment.id, prayer: prayerId, slot })
+  }
+
+  return { ...plan, items, generatedAt: now }
 }
 
 /** Passages that are due today and not already in the plan — for extra drilling. */

@@ -1,14 +1,27 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
   useReducer,
   useRef,
+  useState,
   type ReactNode,
 } from 'react'
+import {
+  cloudConfigured,
+  currentUser,
+  onAuthChange,
+  pullState,
+  pushState,
+  signInWithGoogle,
+  signOut as cloudSignOut,
+  type CloudUser,
+} from '../lib/cloud'
 import { dayKey } from '../lib/dates'
-import { buildPlan } from '../lib/engine'
+import { mergeStates } from '../lib/merge'
+import { buildPlan, reshufflePrayer } from '../lib/engine'
 import { carryAfter, nextPortion } from '../lib/hifz'
 import { normalizeRanges, type Range } from '../lib/refs'
 import { bestOverlap, buildSegments, type Segment } from '../lib/segments'
@@ -20,7 +33,7 @@ import {
   saveState,
   clearState,
 } from '../lib/storage'
-import type { AppState, Grade, HifzGoal, ReviewRecord, Settings } from '../lib/types'
+import type { AppState, Grade, HifzGoal, PrayerId, ReviewRecord, Settings } from '../lib/types'
 
 type Action =
   | { type: 'hydrate'; state: AppState }
@@ -30,6 +43,7 @@ type Action =
   | { type: 'setHifz'; patch: Partial<HifzGoal> }
   | { type: 'grade'; segmentId: string; grade: Grade }
   | { type: 'reshuffle' }
+  | { type: 'reshufflePrayer'; prayer: PrayerId }
   | { type: 'completePortion' }
   | { type: 'onboarded' }
   | { type: 'reset' }
@@ -91,7 +105,27 @@ function derive(state: AppState, today = dayKey()): AppState {
   return { ...state, records, plans, hifz }
 }
 
+/** Actions that represent a real user edit, and so bump `updatedAt`. */
+const LOCAL_EDITS = new Set<Action['type']>([
+  'setMemorised',
+  'setSettings',
+  'setHifz',
+  'grade',
+  'reshuffle',
+  'reshufflePrayer',
+  'completePortion',
+  'onboarded',
+  'reset',
+])
+
 function reducer(state: AppState, action: Action): AppState {
+  const next = reduce(state, action)
+  return LOCAL_EDITS.has(action.type) && next !== state
+    ? { ...next, updatedAt: Date.now() }
+    : next
+}
+
+function reduce(state: AppState, action: Action): AppState {
   const today = dayKey()
   switch (action.type) {
     case 'hydrate':
@@ -115,6 +149,22 @@ function reducer(state: AppState, action: Action): AppState {
 
     case 'reshuffle':
       return derive({ ...state, planSalt: state.planSalt + 1 }, today)
+
+    case 'reshufflePrayer': {
+      const plan = state.plans[today]
+      if (!plan) return state
+      const segments = buildSegments(state.memorised, state.settings.segmentation)
+      const next = reshufflePrayer({
+        day: today,
+        prayerId: action.prayer,
+        plan,
+        segments,
+        records: state.records,
+        settings: state.settings,
+        plans: state.plans,
+      })
+      return { ...state, plans: { ...state.plans, [today]: next } }
+    }
 
     case 'onboarded':
       return derive({ ...state, onboarded: true }, today)
@@ -184,6 +234,8 @@ function reducer(state: AppState, action: Action): AppState {
   }
 }
 
+export type SyncStatus = 'off' | 'signed-out' | 'syncing' | 'synced' | 'error'
+
 interface StoreValue {
   state: AppState
   segments: Segment[]
@@ -191,6 +243,16 @@ interface StoreValue {
   today: string
   ready: boolean
   dispatch: (action: Action) => void
+  /** Cloud sync — inert unless Supabase keys are configured. */
+  sync: {
+    available: boolean
+    user: CloudUser | null
+    status: SyncStatus
+    lastSyncedAt: number | null
+    signIn: () => Promise<void>
+    signOut: () => Promise<void>
+    syncNow: () => Promise<void>
+  }
 }
 
 const StoreContext = createContext<StoreValue | null>(null)
@@ -229,6 +291,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return () => clearInterval(handle)
   }, [state.plans])
 
+  const sync = useCloudSync(state, dispatch, ready)
+
   const segments = useMemo(
     () => buildSegments(state.memorised, state.settings.segmentation),
     [state.memorised, state.settings.segmentation],
@@ -236,11 +300,96 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const segmentById = useMemo(() => new Map(segments.map((s) => [s.id, s])), [segments])
 
   const value = useMemo<StoreValue>(
-    () => ({ state, segments, segmentById, today: dayKey(), ready: ready.current, dispatch }),
-    [state, segments, segmentById],
+    () => ({ state, segments, segmentById, today: dayKey(), ready: ready.current, dispatch, sync }),
+    [state, segments, segmentById, sync],
   )
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>
+}
+
+/**
+ * Pulls the account's state on sign-in, merges it with whatever this device
+ * has, and pushes local changes back on a debounce. Everything keeps working
+ * while signed out — sync is additive, never a prerequisite.
+ */
+function useCloudSync(
+  state: AppState,
+  dispatch: (action: Action) => void,
+  ready: { current: boolean },
+): StoreValue['sync'] {
+  const [user, setUser] = useState<CloudUser | null>(null)
+  const [status, setStatus] = useState<SyncStatus>(cloudConfigured ? 'signed-out' : 'off')
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null)
+  const latest = useRef(state)
+  latest.current = state
+
+  useEffect(() => {
+    if (!cloudConfigured) return
+    void currentUser().then(setUser)
+    return onAuthChange(setUser)
+  }, [])
+
+  const reconcile = useCallback(
+    async (account: CloudUser) => {
+      setStatus('syncing')
+      try {
+        const remote = await pullState()
+        const merged = remote ? mergeStates(latest.current, remote) : latest.current
+        if (remote) dispatch({ type: 'replace', state: merged })
+        await pushState(account.id, merged)
+        setLastSyncedAt(Date.now())
+        setStatus('synced')
+      } catch {
+        setStatus('error')
+      }
+    },
+    [dispatch],
+  )
+
+  // First reconcile after signing in (and on every fresh session).
+  useEffect(() => {
+    if (!user) {
+      setStatus(cloudConfigured ? 'signed-out' : 'off')
+      return
+    }
+    if (!ready.current) return
+    void reconcile(user)
+  }, [user, reconcile, ready])
+
+  // Push local edits, debounced so a burst of grading is one write.
+  const pushedAt = useRef(0)
+  useEffect(() => {
+    if (!user || !ready.current) return
+    if (state.updatedAt === pushedAt.current) return
+    const handle = setTimeout(() => {
+      pushedAt.current = state.updatedAt
+      pushState(user.id, state)
+        .then(() => {
+          setLastSyncedAt(Date.now())
+          setStatus('synced')
+        })
+        .catch(() => setStatus('error'))
+    }, 2500)
+    return () => clearTimeout(handle)
+  }, [state, user, ready])
+
+  return useMemo(
+    () => ({
+      available: cloudConfigured,
+      user,
+      status,
+      lastSyncedAt,
+      signIn: signInWithGoogle,
+      signOut: async () => {
+        await cloudSignOut()
+        setUser(null)
+      },
+      syncNow: async () => {
+        if (user) await reconcile(user)
+      },
+    }),
+    [user, status, lastSyncedAt, reconcile],
+  )
 }
 
 export function useStore(): StoreValue {

@@ -21,7 +21,7 @@ export const DEFAULT_PRAYERS: PrayerConfig[] = [
 export function defaultSettings(): Settings {
   return {
     lang: 'ar',
-    theme: 'dark',
+    theme: 'light',
     riwayah: 'qalun',
     audio: { reciterId: 'qalun-husary', autoplay: false, repeat: 1 },
     showTranslation: true,
@@ -45,6 +45,7 @@ export function defaultSettings(): Settings {
 export function defaultState(): AppState {
   return {
     version: STATE_VERSION,
+    updatedAt: Date.now(),
     onboarded: false,
     memorised: [],
     settings: defaultSettings(),
@@ -115,6 +116,7 @@ export function migrate(raw: Partial<AppState> | null): AppState {
     ...base,
     ...raw,
     version: STATE_VERSION,
+    updatedAt: raw.updatedAt ?? Date.now(),
     settings,
     hifz: { ...base.hifz, ...raw.hifz },
     records: raw.records ?? {},

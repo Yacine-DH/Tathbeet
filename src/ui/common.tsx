@@ -147,6 +147,47 @@ export function Modal({
 }
 
 export const Icon = {
+  // Prayer-time glyphs: language-neutral, readable at 20px.
+  dawn: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <path d="M3 18h18M6.5 18a5.5 5.5 0 0 1 11 0" />
+      <path d="M12 5.5V3M5.6 8.6 4.2 7.2M18.4 8.6l1.4-1.4" />
+    </svg>
+  ),
+  sun: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4" />
+    </svg>
+  ),
+  sunLow: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <circle cx="12" cy="13" r="3.6" />
+      <path d="M12 5.5v1.6M4.6 13H3M21 13h-1.6M6.6 7.6 5.5 6.5M17.4 7.6l1.1-1.1M3 20h18" />
+    </svg>
+  ),
+  sunset: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round">
+      <path d="M3 18h18M6.5 18a5.5 5.5 0 0 1 11 0" />
+      <path d="M12 3v2.5M9.5 7 12 9.5 14.5 7" />
+    </svg>
+  ),
+  moon: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+      <path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z" />
+    </svg>
+  ),
+  star: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round">
+      <path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.5 9.7l5.9-.9z" />
+    </svg>
+  ),
+  cloud: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M7 18a4 4 0 0 1-.4-8A6 6 0 0 1 18 9.5a3.75 3.75 0 0 1-.4 8.5z" />
+      <path d="M12 12v6M9.5 15.5 12 18l2.5-2.5" />
+    </svg>
+  ),
   wave: () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round">
       <path d="M3 12h2M8 6v12M12 3v18M16 7v10M20 11h1" />

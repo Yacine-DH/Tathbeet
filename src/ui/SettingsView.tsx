@@ -1,6 +1,6 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { PACE_PRESETS, paceLabel } from '../lib/hifz'
-import { LANGUAGES } from '../lib/i18n'
+import { LANGUAGES, localeOf } from '../lib/i18n'
 import { BASMALA } from '../lib/quranText'
 import { exportBackup, importBackup } from '../lib/storage'
 import type { I18nKey } from '../lib/i18n'
@@ -10,7 +10,15 @@ import { Field, Icon, Segmented, ToggleRow, useT } from './common'
 import { RecitationPicker } from './ReciterPicker'
 import { TargetPicker } from './Setup'
 
-type Group = 'recitation' | 'prayers' | 'engine' | 'goal' | 'reminder' | 'appearance' | 'data'
+type Group =
+  | 'recitation'
+  | 'prayers'
+  | 'engine'
+  | 'goal'
+  | 'reminder'
+  | 'appearance'
+  | 'sync'
+  | 'data'
 
 const GROUPS: { id: Group; title: I18nKey; desc: I18nKey; icon: () => ReactNode }[] = [
   { id: 'recitation', title: 'set.group.recitation', desc: 'set.group.recitationDesc', icon: Icon.wave },
@@ -19,6 +27,7 @@ const GROUPS: { id: Group; title: I18nKey; desc: I18nKey; icon: () => ReactNode 
   { id: 'goal', title: 'set.hifz', desc: 'set.group.goalDesc', icon: Icon.target },
   { id: 'reminder', title: 'set.reminder', desc: 'set.group.reminderDesc', icon: Icon.bell },
   { id: 'appearance', title: 'set.group.appearance', desc: 'set.group.appearanceDesc', icon: Icon.palette },
+  { id: 'sync', title: 'set.group.sync', desc: 'set.group.syncDesc', icon: Icon.cloud },
   { id: 'data', title: 'set.data', desc: 'set.group.dataDesc', icon: Icon.database },
 ]
 
@@ -50,6 +59,7 @@ export function SettingsView() {
         {group === 'goal' && <GoalPage />}
         {group === 'reminder' && <ReminderPage onFlash={flash} />}
         {group === 'appearance' && <AppearancePage />}
+        {group === 'sync' && <SyncPage />}
         {group === 'data' && <DataPage onFlash={flash} />}
         {toast && <div className="toast">{toast}</div>}
       </div>
@@ -447,6 +457,108 @@ function AppearancePage() {
         />
       </Field>
     </div>
+  )
+}
+
+/** Google sign-in, sync state, and a manual trigger. */
+function SyncPage() {
+  const { sync, state } = useStore()
+  const t = useT()
+  const [busy, setBusy] = useState(false)
+
+  const message =
+    sync.status === 'off'
+      ? t('sync.off')
+      : sync.status === 'syncing'
+        ? t('sync.syncing')
+        : sync.status === 'error'
+          ? t('sync.error')
+          : sync.user
+            ? t('sync.synced')
+            : t('sync.signedOut')
+
+  const tone =
+    sync.status === 'error'
+      ? 'var(--danger)'
+      : sync.user && sync.status === 'synced'
+        ? 'var(--ok)'
+        : 'var(--muted)'
+
+  return (
+    <>
+      <div className="card">
+        <div className="row between">
+          <div className="grow">
+            <div style={{ color: tone }}>{message}</div>
+            {sync.lastSyncedAt && (
+              <div className="tiny faint">
+                {new Date(sync.lastSyncedAt).toLocaleTimeString(localeOf(state.settings.lang))}
+              </div>
+            )}
+          </div>
+          {sync.user?.avatar && (
+            <img
+              src={sync.user.avatar}
+              alt=""
+              width={40}
+              height={40}
+              style={{ borderRadius: '50%' }}
+            />
+          )}
+        </div>
+
+        {sync.user && (
+          <div className="passage" style={{ pointerEvents: 'none' }}>
+            <span className="grow">
+              <span className="name">{sync.user.name ?? sync.user.email}</span>
+              {sync.user.name && sync.user.email && (
+                <span className="meta" style={{ display: 'block' }}>
+                  {sync.user.email}
+                </span>
+              )}
+            </span>
+          </div>
+        )}
+
+        {!sync.available ? null : sync.user ? (
+          <div className="row" style={{ gap: 8 }}>
+            <button
+              className="btn grow"
+              disabled={busy || sync.status === 'syncing'}
+              onClick={async () => {
+                setBusy(true)
+                await sync.syncNow()
+                setBusy(false)
+              }}
+            >
+              {t('sync.now')}
+            </button>
+            <button className="btn grow danger" onClick={() => void sync.signOut()}>
+              {t('sync.signOut')}
+            </button>
+          </div>
+        ) : (
+          <button
+            className="btn primary block"
+            disabled={busy}
+            onClick={async () => {
+              setBusy(true)
+              try {
+                await sync.signIn()
+              } finally {
+                setBusy(false)
+              }
+            }}
+          >
+            {t('sync.signIn')}
+          </button>
+        )}
+      </div>
+
+      <div className="card tight">
+        <div className="small muted">{t('sync.explain')}</div>
+      </div>
+    </>
   )
 }
 
