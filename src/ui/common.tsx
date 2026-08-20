@@ -156,19 +156,28 @@ export function GitHubBadge({ compact }: { compact?: boolean } = {}) {
   const [stars, setStars] = useState<number | null>(null)
 
   useEffect(() => {
-    const KEY = 'tathbit-gh-stars'
+    // Key is versioned so an older, longer-lived cache can't pin a stale count.
+    const KEY = 'tathbit-gh-stars-v2'
+    const REFRESH_AFTER = 5 * 60_000
+    let cachedAt = 0
+
     try {
       const cached = JSON.parse(localStorage.getItem(KEY) ?? 'null') as {
         n: number
         at: number
       } | null
-      if (cached && Date.now() - cached.at < 6 * 3_600_000) {
+      if (cached) {
         setStars(cached.n)
-        return
+        cachedAt = cached.at
       }
     } catch {
-      /* corrupt cache — refetch */
+      /* corrupt cache — just refetch */
     }
+
+    // Show the cached number at once, but go and check anyway: a count that
+    // never refreshes is worse than no count.
+    if (Date.now() - cachedAt < REFRESH_AFTER) return
+
     fetch('https://api.github.com/repos/Yacine-DH/Tathbeet')
       .then((res) => (res.ok ? res.json() : null))
       .then((json: { stargazers_count?: number } | null) => {
@@ -177,7 +186,7 @@ export function GitHubBadge({ compact }: { compact?: boolean } = {}) {
         try {
           localStorage.setItem(KEY, JSON.stringify({ n: json.stargazers_count, at: Date.now() }))
         } catch {
-          /* storage full — count still shows this session */
+          /* storage full — the count still shows this session */
         }
       })
       .catch(() => {})
