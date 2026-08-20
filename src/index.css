@@ -1297,3 +1297,299 @@ input[type='range'] {
   direction: rtl;
   text-align: start;
 }
+
+/* ============================================================
+   Desktop scale-up
+   The base sizing is tuned for a phone in the hand. On a monitor
+   that reads tiny, so type, controls and spacing all step up.
+   ============================================================ */
+
+@media (min-width: 900px) {
+  body {
+    font-size: 17px;
+  }
+
+  .canvas {
+    max-width: 1060px;
+  }
+
+  .screen {
+    padding: 14px 28px 48px;
+    gap: 20px;
+  }
+
+  h1 {
+    font-size: 36px;
+  }
+  h2 {
+    font-size: 24px;
+  }
+  h3 {
+    font-size: 17px;
+  }
+
+  .greeting {
+    font-size: 56px;
+    margin: 10px 0 6px;
+  }
+
+  .small {
+    font-size: 14px;
+  }
+  .tiny {
+    font-size: 13px;
+  }
+  .section-label {
+    font-size: 12.5px;
+  }
+
+  .card {
+    padding: 26px;
+    gap: 18px;
+    border-radius: 28px;
+  }
+
+  .card.tight {
+    padding: 20px 22px;
+    gap: 14px;
+    border-radius: 22px;
+  }
+
+  .btn {
+    min-height: 52px;
+    padding: 0 22px;
+    font-size: 15.5px;
+    border-radius: 16px;
+  }
+
+  .btn.sm {
+    min-height: 42px;
+    padding: 0 16px;
+    font-size: 14px;
+  }
+
+  .btn.round {
+    width: 60px;
+    min-width: 60px;
+    height: 60px;
+  }
+
+  .btn.icon {
+    min-width: 52px;
+  }
+
+  .chip {
+    font-size: 13px;
+    padding: 5px 13px;
+  }
+
+  .seg button {
+    min-height: 44px;
+    font-size: 14.5px;
+  }
+
+  .bar {
+    height: 13px;
+  }
+
+  .display-number {
+    font-size: 60px;
+  }
+
+  .stat {
+    padding: 22px;
+    border-radius: 22px;
+  }
+
+  .stat b {
+    font-size: 34px;
+  }
+
+  .stat span {
+    font-size: 13px;
+  }
+
+  .quick-row {
+    grid-auto-columns: minmax(76px, 1fr);
+    gap: 12px;
+  }
+
+  .quick {
+    font-size: 12.5px;
+    gap: 9px;
+  }
+
+  .quick i {
+    width: 68px;
+    height: 68px;
+    font-size: 17px;
+  }
+
+  .quick i span {
+    width: 26px !important;
+    height: 26px !important;
+  }
+
+  .passage {
+    min-height: 76px;
+    padding: 15px 18px;
+    border-radius: 20px;
+  }
+
+  .passage .name {
+    font-size: 16px;
+  }
+
+  .passage .meta {
+    font-size: 13px;
+  }
+
+  .strength-ring {
+    width: 46px;
+    height: 46px;
+    font-size: 12px;
+  }
+
+  .nav-row {
+    min-height: 78px;
+    padding: 18px 22px;
+    border-radius: 22px;
+  }
+
+  .nav-row .glyph {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+  }
+
+  .nav-row .glyph svg {
+    width: 23px;
+    height: 23px;
+  }
+
+  .surah-row {
+    min-height: 68px;
+    padding: 13px 16px;
+  }
+
+  .surah-row .ar {
+    font-size: 20px;
+  }
+
+  .surah-list {
+    max-height: 62vh;
+  }
+
+  .verse-grid {
+    grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  }
+
+  .verse-grid button {
+    min-height: 48px;
+    font-size: 14px;
+  }
+
+  input[type='text'],
+  input[type='number'],
+  input[type='time'],
+  input[type='search'],
+  select {
+    min-height: 50px;
+    font-size: 15.5px;
+    border-radius: 16px;
+  }
+
+  .switch {
+    width: 54px;
+    height: 32px;
+  }
+
+  .switch::after {
+    width: 24px;
+    height: 24px;
+  }
+
+  .switch.on::after {
+    transform: translateX(21px);
+  }
+
+  [dir='rtl'] .switch.on::after {
+    transform: translateX(-21px);
+  }
+
+  /* Navigation rail */
+  .rail {
+    width: 268px;
+    padding: 24px 16px;
+    border-radius: 32px;
+  }
+
+  .rail nav button {
+    font-size: 15px;
+    padding: 13px 14px;
+    border-radius: 15px;
+  }
+
+  .rail nav svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  .rail .brand .mark {
+    width: 40px;
+    height: 40px;
+    font-size: 17px;
+    border-radius: 13px;
+  }
+
+  .rail .brand b {
+    font-size: 17px;
+  }
+
+  /* Recitation session */
+  .overlay-body {
+    max-width: 860px;
+    padding: 16px 28px 32px;
+    gap: 22px;
+  }
+
+  .overlay-foot {
+    max-width: 860px;
+    padding: 16px 28px calc(18px + env(safe-area-inset-bottom));
+    gap: 14px;
+  }
+
+  .grades button {
+    min-height: 72px;
+    font-size: 14.5px;
+    border-radius: 16px;
+  }
+
+  .grades button span {
+    font-size: 11.5px;
+  }
+
+  .translation {
+    font-size: 15px;
+  }
+
+  .modal {
+    padding: 26px;
+    gap: 18px;
+  }
+}
+
+/* Extra room on large monitors. */
+@media (min-width: 1500px) {
+  body {
+    font-size: 18px;
+  }
+
+  .canvas {
+    max-width: 1180px;
+  }
+
+  .greeting {
+    font-size: 64px;
+  }
+}
