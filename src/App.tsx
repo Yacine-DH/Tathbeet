@@ -4,7 +4,7 @@ import { directionOf, translator } from './lib/i18n'
 import { loadArabic, loadTranslation } from './lib/quranText'
 import { countAyahs } from './lib/refs'
 import { StoreProvider, useStore } from './state/store'
-import { Icon, Modal, useT } from './ui/common'
+import { GitHubBadge, Icon, Modal, useT } from './ui/common'
 import { RecitationPicker } from './ui/ReciterPicker'
 import { Inventory } from './ui/Inventory'
 import { Progress } from './ui/Progress'
@@ -127,6 +127,7 @@ function Shell() {
             {countAyahs(state.memorised)} {t('common.verses')}
           </div>
         </div>
+        <GitHubBadge />
       </aside>
 
       <div className="canvas">

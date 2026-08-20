@@ -6,7 +6,7 @@ import { exportBackup, importBackup } from '../lib/storage'
 import type { I18nKey } from '../lib/i18n'
 import type { PrayerConfig, Settings, Theme } from '../lib/types'
 import { useStore, wipeEverything } from '../state/store'
-import { Field, Icon, Segmented, ToggleRow, useT } from './common'
+import { Field, GitHubBadge, Icon, Segmented, ToggleRow, useT } from './common'
 import { RecitationPicker } from './ReciterPicker'
 import { TargetPicker } from './Setup'
 
@@ -85,6 +85,9 @@ export function SettingsView() {
             </span>
           </button>
         ))}
+      </div>
+      <div className="row" style={{ justifyContent: 'center' }}>
+        <GitHubBadge />
       </div>
       {toast && <div className="toast">{toast}</div>}
     </div>
