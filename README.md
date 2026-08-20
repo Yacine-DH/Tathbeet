@@ -1,4 +1,4 @@
-# Tathbit · تَثْبِيت
+# Tathbeet · تَثْبِيت
 
 **Your grip on what you have memorised:** each day it picks the passages to recite in your prayers,
 weighted toward whatever is starting to fade. New memorisation advances at a pace you set, in your
