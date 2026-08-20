@@ -1778,3 +1778,19 @@ input[type='range'] {
 .rail .gh-badge:hover {
   color: var(--rail-text);
 }
+
+/* Compact badge sits beside the wordmark in the rail. */
+.gh-badge.compact {
+  gap: 6px;
+  padding: 6px 9px;
+  border-radius: 10px;
+  flex: none;
+}
+
+.rail .brand {
+  gap: 9px;
+}
+
+.rail .brand .gh-badge {
+  margin-top: 0;
+}

@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react'
-import { computeStreak, dayKey } from './lib/dates'
+import { dayKey } from './lib/dates'
 import { directionOf, translator } from './lib/i18n'
 import { loadArabic, loadTranslation } from './lib/quranText'
-import { countAyahs } from './lib/refs'
 import { StoreProvider, useStore } from './state/store'
 import { GitHubBadge, Icon, Modal, useT } from './ui/common'
 import { RecitationPicker } from './ui/ReciterPicker'
@@ -52,15 +51,14 @@ function Shell() {
 
   if (!state.onboarded) return <Setup />
 
-  const streak = computeStreak(state.activeDays, dayKey())
-
   return (
     <div className="app">
       {/* Desktop navigation rail; below 900px the bottom bar takes over. */}
       <aside className="rail">
         <div className="brand">
           <span className="mark">ت</span>
-          <b>{t('app.name')}</b>
+          <b className="grow">{t('app.name')}</b>
+          <GitHubBadge compact />
         </div>
         <nav>
           {TABS.map((item) => (
@@ -116,18 +114,6 @@ function Shell() {
               </button>
             ))}
         </div>
-        <div className="rail-foot">
-          <div className="tiny" style={{ color: 'var(--rail-muted)' }}>
-            {t('prog.streak')}
-          </div>
-          <div style={{ fontSize: 26, fontWeight: 620, letterSpacing: '-0.03em' }}>
-            {streak} <span style={{ fontSize: 13, fontWeight: 400 }}>{t('prog.days')}</span>
-          </div>
-          <div className="tiny" style={{ color: 'var(--rail-muted)' }}>
-            {countAyahs(state.memorised)} {t('common.verses')}
-          </div>
-        </div>
-        <GitHubBadge />
       </aside>
 
       <div className="canvas">
