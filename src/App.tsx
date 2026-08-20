@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
-import { dayKey } from './lib/dates'
-import { loadArabic, loadTranslation } from './lib/quranText'
+import { computeStreak, dayKey } from './lib/dates'
 import { directionOf, translator } from './lib/i18n'
+import { loadArabic, loadTranslation } from './lib/quranText'
+import { countAyahs } from './lib/refs'
 import { StoreProvider, useStore } from './state/store'
 import { Icon, useT } from './ui/common'
 import { Inventory } from './ui/Inventory'
@@ -11,6 +12,13 @@ import { Setup } from './ui/Setup'
 import { Today } from './ui/Today'
 
 type Tab = 'today' | 'memorised' | 'progress' | 'settings'
+
+const TABS: { id: Tab; label: 'nav.today'; icon: () => React.ReactNode }[] = [
+  { id: 'today', label: 'nav.today', icon: Icon.today },
+  { id: 'memorised', label: 'nav.memorised' as 'nav.today', icon: Icon.book },
+  { id: 'progress', label: 'nav.progress' as 'nav.today', icon: Icon.chart },
+  { id: 'settings', label: 'nav.settings' as 'nav.today', icon: Icon.gear },
+]
 
 export default function App() {
   return (
@@ -42,47 +50,62 @@ function Shell() {
 
   if (!state.onboarded) return <Setup />
 
+  const streak = computeStreak(state.activeDays, dayKey())
+
   return (
     <div className="app">
-      <div className="topbar">
-        <div>
-          <h1>{tabTitle(tab, t)}</h1>
-          <div className="sub">{t('app.tagline')}</div>
+      {/* Desktop navigation rail; below 900px the bottom bar takes over. */}
+      <aside className="rail">
+        <div className="brand">
+          <span className="mark">ت</span>
+          <b>{t('app.name')}</b>
         </div>
+        <nav>
+          {TABS.map((item) => (
+            <button
+              key={item.id}
+              className={tab === item.id ? 'active' : ''}
+              onClick={() => setTab(item.id)}
+            >
+              <item.icon />
+              {t(item.label)}
+            </button>
+          ))}
+        </nav>
+        <div className="rail-foot">
+          <div className="tiny" style={{ color: 'var(--rail-muted)' }}>
+            {t('prog.streak')}
+          </div>
+          <div style={{ fontSize: 26, fontWeight: 620, letterSpacing: '-0.03em' }}>
+            {streak} <span style={{ fontSize: 13, fontWeight: 400 }}>{t('prog.days')}</span>
+          </div>
+          <div className="tiny" style={{ color: 'var(--rail-muted)' }}>
+            {countAyahs(state.memorised)} {t('common.verses')}
+          </div>
+        </div>
+      </aside>
+
+      <div className="canvas">
+        {tab === 'today' && <Today onGoTo={setTab} />}
+        {tab === 'memorised' && <Inventory />}
+        {tab === 'progress' && <Progress />}
+        {tab === 'settings' && <SettingsView />}
       </div>
 
-      {tab === 'today' && <Today onGoTo={setTab} />}
-      {tab === 'memorised' && <Inventory />}
-      {tab === 'progress' && <Progress />}
-      {tab === 'settings' && <SettingsView />}
-
       <nav className="tabbar">
-        <button className={tab === 'today' ? 'active' : ''} onClick={() => setTab('today')}>
-          <Icon.today />
-          {t('nav.today')}
-        </button>
-        <button className={tab === 'memorised' ? 'active' : ''} onClick={() => setTab('memorised')}>
-          <Icon.book />
-          {t('nav.memorised')}
-        </button>
-        <button className={tab === 'progress' ? 'active' : ''} onClick={() => setTab('progress')}>
-          <Icon.chart />
-          {t('nav.progress')}
-        </button>
-        <button className={tab === 'settings' ? 'active' : ''} onClick={() => setTab('settings')}>
-          <Icon.gear />
-          {t('nav.settings')}
-        </button>
+        {TABS.map((item) => (
+          <button
+            key={item.id}
+            className={tab === item.id ? 'active' : ''}
+            onClick={() => setTab(item.id)}
+          >
+            <item.icon />
+            {t(item.label)}
+          </button>
+        ))}
       </nav>
     </div>
   )
-}
-
-function tabTitle(tab: Tab, t: ReturnType<typeof translator>): string {
-  if (tab === 'today') return t('nav.today')
-  if (tab === 'memorised') return t('nav.memorised')
-  if (tab === 'progress') return t('nav.progress')
-  return t('nav.settings')
 }
 
 /**

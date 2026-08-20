@@ -21,7 +21,7 @@ export const DEFAULT_PRAYERS: PrayerConfig[] = [
 export function defaultSettings(): Settings {
   return {
     lang: 'ar',
-    theme: 'dark',
+    theme: 'light',
     riwayah: 'qalun',
     audio: { reciterId: 'qalun-husary', autoplay: false, repeat: 1 },
     showTranslation: true,

@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import { computeStreak, dayKey, formatDay } from '../lib/dates'
 import { dueBacklog } from '../lib/engine'
 import { hifzProgress, targetLabel } from '../lib/hifz'
@@ -9,6 +9,17 @@ import type { PlanItem, PrayerId } from '../lib/types'
 import { useStore } from '../state/store'
 import { Bar, Icon, StrengthRing, useT } from './common'
 import { Session, type SessionItem } from './Session'
+
+/** Time-of-day glyph per prayer, so the row reads without language. */
+const PRAYER_ICON: Record<PrayerId, () => ReactNode> = {
+  fajr: Icon.dawn,
+  dhuhr: Icon.sun,
+  asr: Icon.sunLow,
+  maghrib: Icon.sunset,
+  isha: Icon.moon,
+  witr: Icon.star,
+  free: Icon.book,
+}
 
 export function Today({ onGoTo }: { onGoTo: (tab: 'memorised' | 'settings') => void }) {
   const { state, segmentById, segments, dispatch } = useStore()
@@ -31,6 +42,7 @@ export function Today({ onGoTo }: { onGoTo: (tab: 'memorised' | 'settings') => v
 
   const done = plan?.items.filter((i) => i.grade).length ?? 0
   const total = plan?.items.length ?? 0
+  const percent = total ? Math.round((done / total) * 100) : 0
   const remaining = (plan?.items ?? []).filter((i) => !i.grade)
 
   const backlog = useMemo(
@@ -44,7 +56,7 @@ export function Today({ onGoTo }: { onGoTo: (tab: 'memorised' | 'settings') => v
   if (!state.memorised.length) {
     return (
       <div className="screen">
-        <div className="card center" style={{ gap: 16, padding: 28 }}>
+        <div className="card center" style={{ gap: 16, padding: 30 }}>
           <h2>{t('today.empty')}</h2>
           <button className="btn primary" onClick={() => onGoTo('memorised')}>
             {t('today.emptyCta')}
@@ -54,85 +66,121 @@ export function Today({ onGoTo }: { onGoTo: (tab: 'memorised' | 'settings') => v
     )
   }
 
+  const activePrayers = state.settings.prayers.filter(
+    (p) => (byPrayer.get(p.id) ?? []).length > 0,
+  )
+
   return (
     <div className="screen">
-      {/* Hero: the day at a glance, and the one button that matters. */}
+      <div>
+        <div className="tiny faint">{formatDay(today, state.settings.lang)}</div>
+        <h1 className="greeting">{t('today.greeting')}</h1>
+      </div>
+
+      {/* Daily goal — progress plus the single action that starts the session. */}
       <div className="card hero">
-        <div className="row between" style={{ alignItems: 'flex-start' }}>
-          <div>
-            <div className="tiny faint">{formatDay(today, state.settings.lang)}</div>
-            <div className="row" style={{ gap: 8, alignItems: 'baseline', marginTop: 4 }}>
+        <div className="row between">
+          <div className="grow">
+            <div className="small muted">{t('today.goalLine', { p: percent })}</div>
+            <div className="row" style={{ gap: 6, alignItems: 'baseline', marginTop: 2 }}>
               <span className="display-number">{done}</span>
               <span className="muted">/ {total}</span>
             </div>
-            <div className="tiny faint">{t('today.plan')}</div>
           </div>
-          <div className="col" style={{ alignItems: 'flex-end', gap: 8 }}>
-            {streak > 0 && <span className="chip gold">🔥 {t('today.streak', { n: streak })}</span>}
+          <button
+            className="btn primary round"
+            aria-label={t('today.startSession')}
+            onClick={() => setSession(toItems(remaining.map((i) => i.segmentId)))}
+            disabled={!remaining.length}
+          >
+            <Icon.play />
+          </button>
+        </div>
+        <Bar value={total ? done / total : 0} />
+        <div className="row between tiny faint">
+          <span>{t('today.plan')}</span>
+          <span className="row" style={{ gap: 8 }}>
+            {streak > 0 && <span className="chip accent">🔥 {t('today.streak', { n: streak })}</span>}
             <button className="btn sm ghost" onClick={() => dispatch({ type: 'reshuffle' })}>
               <Icon.shuffle /> {t('today.reshuffle')}
             </button>
+          </span>
+        </div>
+      </div>
+
+      {/* Circular quick actions: one per prayer that has passages today. */}
+      {activePrayers.length > 0 && (
+        <div className="col" style={{ gap: 8 }}>
+          <span className="section-label">{t('today.quick')}</span>
+          <div className="quick-row">
+            {activePrayers.map((p) => {
+              const items = byPrayer.get(p.id) ?? []
+              const finished = items.every((i) => i.grade)
+              const started = items.some((i) => i.grade)
+              const Glyph = PRAYER_ICON[p.id]
+              return (
+                <button
+                  key={p.id}
+                  className={`quick ${finished ? 'done' : started ? 'partial' : ''}`}
+                  onClick={() => setSession(toItems(items.filter((i) => !i.grade).map((i) => i.segmentId)))}
+                  disabled={finished}
+                >
+                  <i>
+                    <span style={{ width: 20, height: 20, display: 'grid', placeItems: 'center' }}>
+                      <Glyph />
+                    </span>
+                  </i>
+                  {t(`prayer.${p.id}` as 'prayer.fajr')}
+                </button>
+              )
+            })}
           </div>
         </div>
-
-        <Bar value={total ? done / total : 0} />
-
-        <button
-          className="btn primary block"
-          onClick={() => setSession(toItems(remaining.map((i) => i.segmentId)))}
-          disabled={!remaining.length}
-        >
-          <Icon.play /> {remaining.length ? t('today.startSession') : t('today.done')}
-        </button>
-      </div>
+      )}
 
       <HifzCard onStudy={(item) => setSession([item])} />
 
-      <h3 className="section-label" style={{ marginTop: 4 }}>
-        {t('today.plan')}
-      </h3>
+      <span className="section-label">{t('today.summary')}</span>
 
-      {state.settings.prayers
-        .filter((p) => (byPrayer.get(p.id) ?? []).length > 0)
-        .map((prayer) => {
-          const items = byPrayer.get(prayer.id) ?? []
-          const prayerDone = items.every((i) => i.grade)
-          return (
-            <div key={prayer.id} className="card tight">
-              <div className="card-head">
-                <h3 style={prayerDone ? { color: 'var(--faint)' } : undefined}>
-                  {t(`prayer.${prayer.id}` as 'prayer.fajr')}
-                </h3>
-                <div className="row" style={{ gap: 8 }}>
-                  <span className="tiny faint">
-                    {items.filter((i) => i.grade).length}/{items.length}
-                  </span>
-                  <button
-                    className="btn sm icon"
-                    aria-label={t('today.reciteAll')}
-                    onClick={() => setSession(toItems(items.map((i) => i.segmentId)))}
-                  >
-                    <Icon.play />
-                  </button>
-                </div>
-              </div>
-              <div className="col" style={{ gap: 6 }}>
-                {items.map((item) => {
-                  const seg = segmentById.get(item.segmentId)
-                  if (!seg) return null
-                  return (
-                    <PassageRow
-                      key={item.segmentId}
-                      segment={seg}
-                      done={!!item.grade}
-                      onClick={() => setSession(toItems([item.segmentId]))}
-                    />
-                  )
-                })}
+      {activePrayers.map((prayer) => {
+        const items = byPrayer.get(prayer.id) ?? []
+        const prayerDone = items.every((i) => i.grade)
+        return (
+          <div key={prayer.id} className="card tight">
+            <div className="card-head">
+              <h3 style={prayerDone ? { color: 'var(--faint)' } : undefined}>
+                {t(`prayer.${prayer.id}` as 'prayer.fajr')}
+              </h3>
+              <div className="row" style={{ gap: 8 }}>
+                <span className="tiny faint">
+                  {items.filter((i) => i.grade).length}/{items.length}
+                </span>
+                <button
+                  className="btn sm icon"
+                  aria-label={t('today.reciteAll')}
+                  onClick={() => setSession(toItems(items.map((i) => i.segmentId)))}
+                >
+                  <Icon.play />
+                </button>
               </div>
             </div>
-          )
-        })}
+            <div className="col" style={{ gap: 6 }}>
+              {items.map((item) => {
+                const seg = segmentById.get(item.segmentId)
+                if (!seg) return null
+                return (
+                  <PassageRow
+                    key={item.segmentId}
+                    segment={seg}
+                    done={!!item.grade}
+                    onClick={() => setSession(toItems([item.segmentId]))}
+                  />
+                )
+              })}
+            </div>
+          </div>
+        )
+      })}
 
       {backlog.length > 0 && (
         <div className="card tight">
@@ -203,16 +251,13 @@ function HifzCard({ onStudy }: { onStudy: (item: SessionItem) => void }) {
   const doneToday = goal.completedDays.includes(dayKey())
 
   return (
-    <div
-      className="card tight"
-      style={{ borderColor: 'color-mix(in srgb, var(--gold) 30%, var(--stroke))' }}
-    >
+    <div className="card tight">
       <div className="card-head">
-        <h3 style={{ color: 'var(--gold)' }}>{t('today.hifzTitle')}</h3>
+        <h3>{t('today.hifzTitle')}</h3>
         <span className="chip gold">{targetLabel(goal.target, state.settings.lang)}</span>
       </div>
 
-      <Bar value={progress.percent / 100} tone="linear-gradient(135deg, var(--gold), #f0d9a8)" />
+      <Bar value={progress.percent / 100} />
       <div className="row between tiny faint">
         <span>
           {progress.memorisedAyahs}/{progress.totalAyahs} {t('common.verses')} · {progress.percent}%

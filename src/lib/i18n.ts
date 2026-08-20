@@ -199,6 +199,12 @@ const en = {
   'today.plan': "Today’s plan",
   'today.startSession': "Start session",
 
+  'today.greeting': "Let’s start strong",
+  'today.goalLine': "You’re {p}% to your daily goal",
+  'today.summary': "Summary",
+  'today.quick': "Jump in",
+  'prog.strength': "Strength",
+
   'common.surah': 'Surah',
   'common.verses': 'ayahs',
   'common.verse': 'ayah',
@@ -413,6 +419,12 @@ const ar: Record<Key, string> = {
   'inv.tabPassages': "المقاطع",
   'today.plan': "وِرد اليوم",
   'today.startSession': "ابدأ الجلسة",
+
+  'today.greeting': "هيّا نبدأ بقوّة",
+  'today.goalLine': "أنجزت {p}% من هدف اليوم",
+  'today.summary': "الملخّص",
+  'today.quick': "ابدأ من",
+  'prog.strength': "الرسوخ",
 
   'common.surah': 'سورة',
   'common.verses': 'آية',
@@ -631,6 +643,12 @@ const de: Record<Key, string> = {
   'today.plan': "Heutiger Plan",
   'today.startSession': "Sitzung starten",
 
+  'today.greeting': "Stark starten",
+  'today.goalLine': "Du bist bei {p}% deines Tagesziels",
+  'today.summary': "Übersicht",
+  'today.quick': "Direkt starten",
+  'prog.strength': "Festigkeit",
+
   'common.surah': 'Sure',
   'common.verses': 'Verse',
   'common.verse': 'Vers',
@@ -847,6 +865,12 @@ const fr: Record<Key, string> = {
   'inv.tabPassages': "Passages",
   'today.plan': "Programme du jour",
   'today.startSession': "Démarrer la session",
+
+  'today.greeting': "Commençons fort",
+  'today.goalLine': "Tu es à {p}% de ton objectif du jour",
+  'today.summary': "Résumé",
+  'today.quick': "Commencer par",
+  'prog.strength': "Solidité",
 
   'common.surah': 'Sourate',
   'common.verses': 'versets',
