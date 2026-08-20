@@ -5,7 +5,7 @@ import { nextDueLabel } from '../lib/srs'
 import { GRADES, type Grade, type Riwayah } from '../lib/types'
 import { useStore } from '../state/store'
 import { StrengthRing, useT } from './common'
-import { usePassagePlayer, type Player } from './usePlayer'
+import { LOOP_STEPS, usePassagePlayer, type Player } from './usePlayer'
 import { RecitationSheet, type Recitation } from './ReciterPicker'
 
 export interface SessionItem {
@@ -44,9 +44,12 @@ export function Session({
     riwayah: settings.riwayah,
     reciterId: settings.audio.reciterId,
   }
+  // Loop-to-drill: overrides the stored repeat count for this session only.
+  const [loop, setLoop] = useState<number | null>(null)
+  const repeat = loop ?? settings.audio.repeat
   const audio = useMemo(
-    () => ({ ...settings.audio, reciterId: recitation.reciterId }),
-    [settings.audio, recitation.reciterId],
+    () => ({ ...settings.audio, reciterId: recitation.reciterId, repeat }),
+    [settings.audio, recitation.reciterId, repeat],
   )
   const player = usePassagePlayer(item?.range ?? { surah: 1, start: 1, end: 1 }, audio)
 
@@ -121,6 +124,10 @@ export function Session({
           range={item.range}
           isOverride={override !== null}
           onOpenPicker={() => setPickerOpen(true)}
+          repeat={repeat}
+          onCycleLoop={() =>
+            setLoop(LOOP_STEPS[(LOOP_STEPS.indexOf(repeat as 1) + 1) % LOOP_STEPS.length])
+          }
         />
         <div className="row" style={{ gap: 8 }}>
           <button className="btn grow" onClick={() => setHint(true)} disabled={revealed || hint}>
@@ -178,15 +185,19 @@ function AudioBar({
   range,
   isOverride,
   onOpenPicker,
+  repeat,
+  onCycleLoop,
 }: {
   player: Player
   range: Range
   isOverride: boolean
   onOpenPicker: () => void
+  repeat: number
+  onCycleLoop: () => void
 }) {
   const { state } = useStore()
   const t = useT()
-  const { audio, lang } = state.settings
+  const { lang } = state.settings
   const reciter = player.reciter
   const startsAtSurahHead = reciter?.granularity === 'surah' && range.start > 1
   const busy = player.status === 'playing' || player.status === 'loading'
@@ -224,13 +235,24 @@ function AudioBar({
                 ? t('audio.loading')
                 : player.currentAyah
                   ? `${t('common.verse')} ${player.currentAyah}${
-                      audio.repeat > 1 ? ` · ${t('audio.pass', { i: player.pass, n: audio.repeat })}` : ''
+                      repeat !== 1
+                        ? ` · ${t('audio.pass', { i: player.pass, n: repeat === 0 ? '∞' : repeat })}`
+                        : ''
                     }`
                   : lang === 'ar'
                     ? reciter?.name
                     : (reciter?.nameAr ?? '')}
             </span>
           </span>
+        </button>
+        <button
+          className={`btn sm ${repeat !== 1 ? 'primary' : ''}`}
+          onClick={onCycleLoop}
+          title={t('set.repeat')}
+          aria-label={t('set.repeat')}
+          style={{ minWidth: 46 }}
+        >
+          {repeat === 0 ? '∞' : `${repeat}×`}
         </button>
         {player.status !== 'idle' && (
           <button className="btn sm ghost" onClick={player.stop}>

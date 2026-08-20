@@ -17,6 +17,9 @@ export interface Player {
   error: string | null
 }
 
+/** The loop steps the session control cycles through; 0 = forever. */
+export const LOOP_STEPS = [1, 3, 5, 10, 0] as const
+
 /**
  * Plays a passage with the configured reciter. Ayah-by-ayah reciters get a real
  * playlist (and can repeat the passage); whole-surah reciters play their single
@@ -105,7 +108,8 @@ export function usePassagePlayer(range: Range, audio: AudioSettings): Player {
         playIndex(next)
         return
       }
-      if (passRef.current < Math.max(1, audio.repeat)) {
+      // repeat <= 0 = loop forever (drill mode); otherwise a fixed pass count.
+      if (audio.repeat <= 0 || passRef.current < audio.repeat) {
         passRef.current += 1
         setPass(passRef.current)
         playIndex(0)
